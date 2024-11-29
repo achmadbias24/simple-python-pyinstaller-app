@@ -1,38 +1,49 @@
 node {
-    // Set environment variable DOCKER_HOST untuk menghubungkan ke Docker daemon
-    environment {
-        DOCKER_HOST = 'tcp://localhost:2375'  // Atur sesuai dengan pengaturan Docker Anda
-    }
     try {
+        // Validasi koneksi Docker di awal
+        stage('Validate Docker Connection') {
+            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
+                echo "Checking Docker connection..."
+                sh 'docker info'
+                echo "Docker connection validated successfully."
+            }
+        }
+
         stage('Build') {
-            // Menggunakan Docker image untuk membangun aplikasi
-            docker.image('python:2-alpine').inside {
-                sh 'python -m py_compile sources/add2vals.py sources/calc.py'
+            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
+                // Menggunakan Docker image untuk membangun aplikasi
+                docker.image('python:2-alpine').inside {
+                    sh 'python -m py_compile sources/add2vals.py sources/calc.py'
+                }
             }
         }
 
         stage('Test') {
-            // Menggunakan Docker image untuk menjalankan test
-            docker.image('qnib/pytest').inside {
-                sh 'py.test --verbose --junit-xml test-reports/results.xml sources/test_calc.py'
+            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
+                // Menggunakan Docker image untuk menjalankan test
+                docker.image('qnib/pytest').inside {
+                    sh 'py.test --verbose --junit-xml test-reports/results.xml sources/test_calc.py'
+                }
+                
+                // Menyimpan hasil test dalam format junit
+                junit 'test-reports/results.xml'
             }
-            
-            // Menyimpan hasil test dalam format junit
-            junit 'test-reports/results.xml'
         }
 
         stage('Deliver') {
-            // Menggunakan Docker image untuk melakukan delivery dengan pyinstaller
-            docker.image('cdrx/pyinstaller-linux:python2').inside {
-                sh 'pyinstaller --onefile sources/add2vals.py'
+            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
+                // Menggunakan Docker image untuk melakukan delivery dengan pyinstaller
+                docker.image('cdrx/pyinstaller-linux:python2').inside {
+                    sh 'pyinstaller --onefile sources/add2vals.py'
+                }
+                
+                // Mengarsipkan hasil artifact
+                archiveArtifacts 'dist/add2vals'
             }
-            
-            // Mengarsipkan hasil artifact
-            archiveArtifacts 'dist/add2vals'
         }
-        
     } catch (Exception e) {
         currentBuild.result = 'FAILURE'
+        echo "Pipeline failed: ${e.message}"
         throw e
     } finally {
         echo 'Pipeline selesai.'
