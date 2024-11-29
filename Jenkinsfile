@@ -1,51 +1,69 @@
-node {
-    try {
-        // Validasi koneksi Docker di awal
+pipeline {
+    agent any
+    stages {
         stage('Validate Docker Connection') {
-            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
-                echo "Checking Docker connection..."
-                sh 'docker info'
-                echo "Docker connection validated successfully."
+            steps {
+                script {
+                    echo "Checking Docker connection..."
+                    sh 'docker info'
+                    echo "Docker connection validated successfully."
+                }
             }
         }
 
         stage('Build') {
-            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
-                // Menggunakan Docker image untuk membangun aplikasi
-                docker.image('python:2-alpine').inside {
-                    sh 'python -m py_compile sources/add2vals.py sources/calc.py'
+            steps {
+                script {
+                    echo "Building application..."
+                    docker.image('python:2-alpine').inside {
+                        sh 'python -m py_compile sources/add2vals.py sources/calc.py'
+                    }
                 }
             }
         }
 
         stage('Test') {
-            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
-                // Menggunakan Docker image untuk menjalankan test
-                docker.image('qnib/pytest').inside {
-                    sh 'py.test --verbose --junit-xml test-reports/results.xml sources/test_calc.py'
+            steps {
+                script {
+                    echo "Running tests..."
+                    docker.image('qnib/pytest').inside {
+                        sh 'py.test --verbose --junit-xml test-reports/results.xml sources/test_calc.py'
+                    }
                 }
-                
-                // Menyimpan hasil test dalam format junit
-                junit 'test-reports/results.xml'
+            }
+            post {
+                always {
+                    junit 'test-reports/results.xml'
+                }
             }
         }
 
         stage('Deliver') {
-            withEnv(["DOCKER_HOST=tcp://localhost:2375"]) {
-                // Menggunakan Docker image untuk melakukan delivery dengan pyinstaller
-                docker.image('cdrx/pyinstaller-linux:python2').inside {
-                    sh 'pyinstaller --onefile sources/add2vals.py'
+            steps {
+                script {
+                    echo "Delivering application..."
+                    docker.image('cdrx/pyinstaller-linux:python2').inside {
+                        sh 'pyinstaller --onefile sources/add2vals.py'
+                    }
                 }
-                
-                // Mengarsipkan hasil artifact
-                archiveArtifacts 'dist/add2vals'
+            }
+            post {
+                success {
+                    archiveArtifacts 'dist/add2vals'
+                }
             }
         }
-    } catch (Exception e) {
-        currentBuild.result = 'FAILURE'
-        echo "Pipeline failed: ${e.message}"
-        throw e
-    } finally {
-        echo 'Pipeline selesai.'
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+        always {
+            echo 'Pipeline selesai.'
+        }
     }
 }
