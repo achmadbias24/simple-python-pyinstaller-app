@@ -1,4 +1,8 @@
 node {
+    // Set environment variable DOCKER_HOST untuk menghubungkan ke Docker daemon
+    environment {
+        DOCKER_HOST = 'tcp://localhost:2375'  // Atur sesuai dengan pengaturan Docker Anda
+    }
     try {
         stage('Build') {
             // Menggunakan Docker image untuk membangun aplikasi
