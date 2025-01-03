@@ -41,27 +41,27 @@ pipeline {
         stage('Manual Approval') {
             steps {
                 script {
-                    def userInput = input(
-                        id: 'userInput',
-                        message: 'Lanjutkan ke tahap Deploy?',
-                        ok: 'Proceed', // Tombol untuk melanjutkan
-                        submitterParameter: 'submitter', // Menangkap tombol mana yang ditekan
-                        parameters: [] // Tidak ada parameter tambahan
-                    )
+                    def proceed = false
+                    try {
+                        input(
+                            id: 'userInput',
+                            message: 'Lanjutkan ke tahap Deploy?',
+                            ok: 'Proceed' // Tombol untuk melanjutkan
+                        )
+                        proceed = true
+                    } catch (e) {
+                        echo 'Pipeline aborted by user.'
+                        error 'Pipeline terminated.'
+                    }
 
-                    if (userInput == 'Proceed') {
-                        echo 'Proceeding to Deploy stage...'
-                    } else {
-                        error 'Pipeline aborted by user.'
+                    if (proceed) {
+                        echo 'User approved. Proceeding to Deploy stage...'
                     }
                 }
             }
         }
 
         stage('Deploy') {
-            when {
-                expression { currentBuild.rawBuild.getActions(org.jenkinsci.plugins.workflow.support.actions.InputAction) == null }
-            }
             steps {
                 echo 'Deploying application...'
                 sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
