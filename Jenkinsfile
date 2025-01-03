@@ -42,18 +42,24 @@ pipeline {
             steps {
                 script {
                     def userInput = input(
-                        id: 'userInput', message: 'Lanjutkan ke tahap Deploy?', parameters: [
-                            [$class: 'BooleanParameterDefinition', defaultValue: true, description: 'Proceed', name: 'Continue'],
-                            [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Abort', name: 'Abort']
+                        id: 'userInput',
+                        message: 'Lanjutkan ke tahap Deploy?',
+                        parameters: [
+                            [$class: 'ChoiceParameterDefinition',
+                             choices: 'Proceed\nAbort',
+                             description: 'Pilih tindakan',
+                             name: 'Action']
                         ]
                     )
-                    if (userInput['Continue']) {
+
+                    if (userInput == 'Proceed') {
                         echo 'Deploying application...'
                         timeout(time: 1, unit: 'MINUTES') {
-                            sh 'echo "Deploying..."'
+                            echo 'Process is running for 1 minute...'
+                            sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
                         }
-                        echo 'Deployment completed within 1 minute.'
-                    } else {
+                        echo 'Deployment process completed.'
+                    } else if (userInput == 'Abort') {
                         error 'Deployment aborted by user.'
                     }
                 }
