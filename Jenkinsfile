@@ -38,23 +38,34 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Manual Approval') {
             steps {
                 script {
                     def userInput = input(
                         id: 'userInput',
                         message: 'Lanjutkan ke tahap Deploy?',
                         ok: 'Proceed', // Tombol untuk melanjutkan
-                        submitter: 'Abort' // Tombol untuk membatalkan
+                        submitterParameter: 'submitter', // Menangkap tombol mana yang ditekan
+                        parameters: [] // Tidak ada parameter tambahan
                     )
 
-                    echo 'Deploying application...'
-                    timeout(time: 1, unit: 'MINUTES') {
-                        echo 'Process is running for 1 minute...'
-                        sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
+                    if (userInput == 'Proceed') {
+                        echo 'Proceeding to Deploy stage...'
+                    } else {
+                        error 'Pipeline aborted by user.'
                     }
-                    echo 'Deployment process completed.'
                 }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                expression { currentBuild.rawBuild.getActions(org.jenkinsci.plugins.workflow.support.actions.InputAction) == null }
+            }
+            steps {
+                echo 'Deploying application...'
+                sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
+                echo 'Deployment process completed.'
             }
         }
     }
