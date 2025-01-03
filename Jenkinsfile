@@ -10,6 +10,9 @@ node {
         stage('Build') {
             // Menggunakan Docker image untuk membangun aplikasi
             docker.image('python:2-alpine').inside {
+                // List the contents of the sources directory
+                sh 'ls -la sources'
+                // Compile the Python files
                 sh 'python -m py_compile sources/add2vals.py sources/calc.py'
             }
         }
