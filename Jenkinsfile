@@ -44,24 +44,16 @@ pipeline {
                     def userInput = input(
                         id: 'userInput',
                         message: 'Lanjutkan ke tahap Deploy?',
-                        parameters: [
-                            [$class: 'ChoiceParameterDefinition',
-                             choices: 'Proceed\nAbort',
-                             description: 'Pilih tindakan',
-                             name: 'Action']
-                        ]
+                        ok: 'Proceed', // Tombol untuk melanjutkan
+                        submitter: 'Abort' // Tombol untuk membatalkan
                     )
 
-                    if (userInput == 'Proceed') {
-                        echo 'Deploying application...'
-                        timeout(time: 1, unit: 'MINUTES') {
-                            echo 'Process is running for 1 minute...'
-                            sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
-                        }
-                        echo 'Deployment process completed.'
-                    } else if (userInput == 'Abort') {
-                        error 'Deployment aborted by user.'
+                    echo 'Deploying application...'
+                    timeout(time: 1, unit: 'MINUTES') {
+                        echo 'Process is running for 1 minute...'
+                        sleep(time: 60, unit: 'SECONDS') // Simulasi proses selama 1 menit
                     }
+                    echo 'Deployment process completed.'
                 }
             }
         }
