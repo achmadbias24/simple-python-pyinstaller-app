@@ -24,6 +24,28 @@ node {
             junit 'test-reports/results.xml'
         }
 
+        stage('Deploy') {
+            steps {
+                script {
+                    def userInput = input(
+                        id: 'userInput', message: 'Lanjutkan ke tahap Deploy?', parameters: [
+                            [$class: 'BooleanParameterDefinition', defaultValue: true, description: 'Proceed', name: 'Continue'],
+                            [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Abort', name: 'Abort']
+                        ]
+                    )
+                    if (userInput['Continue']) {
+                        echo 'Deploying application...'
+                        timeout(time: 1, unit: 'MINUTES') {
+                            sh 'echo "Deploying..."'
+                        }
+                        echo 'Deployment completed within 1 minute.'
+                    } else {
+                        error 'Deployment aborted by user.'
+                    }
+                }
+            }
+        }
+
     } catch (Exception e) {
         currentBuild.result = 'FAILURE'
         echo "Pipeline failed: ${e.message}"
